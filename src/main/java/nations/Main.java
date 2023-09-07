@@ -8,7 +8,7 @@ public class Main {
     private final static String URL = "jdbc:mysql://localhost:3306/db_nations";
     private final static String USER = "root";
     private final static String PW = "Java2023!";
-    private final static String QUERY = "SELECT c.name AS country_name, c.country_id, r.name AS region, c2.name AS continent " +
+    private final static String SEARCH_COUNTRIES_BY_INPUT = "SELECT c.name AS country_name, c.country_id, r.name AS region, c2.name AS continent " +
             "FROM countries c " +
             "JOIN regions r ON c.region_id = r.region_id " +
             "JOIN continents c2 ON r.continent_id = c2.continent_id " +
@@ -18,10 +18,10 @@ public class Main {
             "JOIN country_languages cl ON c.country_id = cl.country_id \n" +
             "JOIN languages l ON cl.language_id = l.language_id \n" +
             "WHERE c.country_id = ? ;";
-    private final static String RECENT_STATS_BY_COUNTRY_ID = "SELECT *\n" +
+    private final static String RECENT_STATS_BY_COUNTRY_ID = "SELECT cs.year, cs.population, cs.gdp\n" +
             "FROM country_stats cs\n" +
-            "WHERE country_id = ?\n" +
-            "ORDER BY `year` DESC";
+            "WHERE country_id = ? \n" +
+            "ORDER BY `year` DESC;";
 
     public static void main(String[] args) {
         Scanner scan = new Scanner(System.in);
@@ -30,9 +30,10 @@ public class Main {
             System.out.println("Search... ");
             String search = "%"+scan.nextLine()+"%";
             System.out.println("Results for '" + search + "' ...");
-            try(PreparedStatement ps = connection.prepareStatement(QUERY)){
+            try(PreparedStatement ps = connection.prepareStatement(SEARCH_COUNTRIES_BY_INPUT)){
                ps.setString(1, search);
                 try(ResultSet rs = ps.executeQuery()){
+                    System.out.println(" COUNTRY | ID | REGION | CONTINENT ");
                     while(rs.next()){
                             String countryName= rs.getString("country_name");
                             int countryId = rs.getInt("country_id");
@@ -54,12 +55,14 @@ public class Main {
                     rs.next();
                     int countryId = rs.getInt("country_id");
                     String countryName=rs.getString("country_name");
-                    System.out.println("Details for: " + countryName);
-                    System.out.println(countryId);
+                    System.out.println("Details for: " + countryName + "   ID: " + countryId);
                     System.out.print("Languages: ");
+                    String language =rs.getString("language");
+                    System.out.print(language);
                     while(rs.next()){
-                        String language =rs.getString("language");
-                        System.out.print(language + " ");
+                        System.out.print(", ");
+                        language =rs.getString("language");
+                        System.out.print(language);
                     }
                     System.out.println();
                 }
@@ -69,14 +72,14 @@ public class Main {
 
             try (PreparedStatement ps = connection.prepareStatement(RECENT_STATS_BY_COUNTRY_ID)){
                 ps.setInt(1,choiceId);
+                System.out.println("Most recent stats: ");
                 try(ResultSet rs = ps.executeQuery()){
                     rs.next();
                     int year=rs.getInt("year");
-                    int population = rs.getInt("population");
-                    int gdp = rs.getInt("gdp");
-                    System.out.println("Most recent stats: ");
                     System.out.println("YEAR: " + year);
+                    int population = rs.getInt("population");
                     System.out.println("POPULATION: " + population);
+                    double gdp = rs.getDouble("gdp");
                     System.out.println("GDP: " + gdp);
                 }
             } catch(SQLException e){
