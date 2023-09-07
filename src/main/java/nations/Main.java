@@ -1,7 +1,6 @@
 package nations;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
@@ -18,7 +17,11 @@ public class Main {
             "FROM countries c \n" +
             "JOIN country_languages cl ON c.country_id = cl.country_id \n" +
             "JOIN languages l ON cl.language_id = l.language_id \n" +
-            "WHERE c.country_id = 1;";
+            "WHERE c.country_id = ? ;";
+    private final static String RECENT_STATS_BY_COUNTRY_ID = "SELECT *\n" +
+            "FROM country_stats cs\n" +
+            "WHERE country_id = ?\n" +
+            "ORDER BY `year` DESC";
 
     public static void main(String[] args) {
         Scanner scan = new Scanner(System.in);
@@ -38,26 +41,48 @@ public class Main {
                             System.out.println(countryName + " | " + countryId + " | " + region + " | " + continent);
                         }
                 }
+            } catch (SQLException e){
+                System.out.println("Error with searching engine.");
             }
+            System.out.println();
             System.out.println("Enter country id to see details: ");
             int choiceId = Integer.parseInt(scan.nextLine());
-            try (PreparedStatement ps = connection.prepareStatement(LANGUAGES_BY_COUNTRY_ID)){
-               // ps.setInt(1, choiceId);
-                try (ResultSet rs = ps.executeQuery(LANGUAGES_BY_COUNTRY_ID)){
-                    rs.next();
-                        int countryId = rs.getInt("country_id");
-                        String countryName=rs.getString("country_name");
-                        System.out.println("Details for: " + countryName);
-                        System.out.println(countryId);
-                        ArrayList<String> languages = new ArrayList<String>();
-                        while (rs.next()){
-                            String language = rs.getString("language");
-                            languages.add(language);
-                        }
-                    System.out.println("Languages:" +languages);
 
+            try (PreparedStatement ps = connection.prepareStatement(LANGUAGES_BY_COUNTRY_ID)){
+               ps.setInt(1, choiceId);
+                try (ResultSet rs = ps.executeQuery()){
+                    rs.next();
+                    int countryId = rs.getInt("country_id");
+                    String countryName=rs.getString("country_name");
+                    System.out.println("Details for: " + countryName);
+                    System.out.println(countryId);
+                    System.out.print("Languages: ");
+                    while(rs.next()){
+                        String language =rs.getString("language");
+                        System.out.print(language + " ");
+                    }
+                    System.out.println();
                 }
+            } catch (SQLException e){
+                System.out.println("Error with getting information about languages.");
             }
+
+            try (PreparedStatement ps = connection.prepareStatement(RECENT_STATS_BY_COUNTRY_ID)){
+                ps.setInt(1,choiceId);
+                try(ResultSet rs = ps.executeQuery()){
+                    rs.next();
+                    int year=rs.getInt("year");
+                    int population = rs.getInt("population");
+                    int gdp = rs.getInt("gdp");
+                    System.out.println("Most recent stats: ");
+                    System.out.println("YEAR: " + year);
+                    System.out.println("POPULATION: " + population);
+                    System.out.println("GDP: " + gdp);
+                }
+            } catch(SQLException e){
+                System.out.println("Error in getting statistics.");
+            }
+
         } catch (SQLException e){
             System.out.print("Connessione al database non riuscita.");
         }
