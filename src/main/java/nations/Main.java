@@ -14,12 +14,11 @@ public class Main {
             "JOIN regions r ON c.region_id = r.region_id " +
             "JOIN continents c2 ON r.continent_id = c2.continent_id " +
             "WHERE c.name LIKE ? ORDER BY c.name;";
-    private final static String ID_QUERY= "SELECT *\n" +
+    private final static String LANGUAGES_BY_COUNTRY_ID= "SELECT c.country_id, c.name AS country_name, l.`language` \n" +
             "FROM countries c \n" +
             "JOIN country_languages cl ON c.country_id = cl.country_id \n" +
             "JOIN languages l ON cl.language_id = l.language_id \n" +
-            "JOIN country_stats cs ON c.country_id =cs.country_id \n" +
-            "WHERE c.country_id = ? ;";
+            "WHERE c.country_id = 1;";
 
     public static void main(String[] args) {
         Scanner scan = new Scanner(System.in);
@@ -42,17 +41,15 @@ public class Main {
             }
             System.out.println("Enter country id to see details: ");
             int choiceId = Integer.parseInt(scan.nextLine());
-            try (PreparedStatement ps = connection.prepareStatement(ID_QUERY)){
-                ps.setInt(1, choiceId);
-                try (ResultSet rs = ps.executeQuery()){
+            try (PreparedStatement ps = connection.prepareStatement(LANGUAGES_BY_COUNTRY_ID)){
+               // ps.setInt(1, choiceId);
+                try (ResultSet rs = ps.executeQuery(LANGUAGES_BY_COUNTRY_ID)){
                     rs.next();
                         int countryId = rs.getInt("country_id");
-                        String countryName=rs.getString("name");
+                        String countryName=rs.getString("country_name");
                         System.out.println("Details for: " + countryName);
                         System.out.println(countryId);
-                    System.out.print("Languages: ");
-                    ArrayList<String> languages = new ArrayList<String>();
-
+                        ArrayList<String> languages = new ArrayList<String>();
                         while (rs.next()){
                             String language = rs.getString("language");
                             languages.add(language);
@@ -62,7 +59,7 @@ public class Main {
                 }
             }
         } catch (SQLException e){
-            System.out.print("Connessione al database non riuscita");
+            System.out.print("Connessione al database non riuscita.");
         }
 
         scan.close();
